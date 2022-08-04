@@ -1,16 +1,41 @@
 package com.thechance.season2week10
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
 import com.google.gson.Gson
-import com.thechance.season2week10.databinding.ActivityMainBinding
 import okhttp3.*
-import okhttp3.logging.HttpLoggingInterceptor
 import java.io.IOException
+import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
+import okhttp3.logging.HttpLoggingInterceptor
+import com.thechance.season2week10.databinding.ActivityMainBinding
+import com.thechance.season2week10.models.WeatherAPI
+
+
+
+class MainActivity : BaseActivity<ActivityMainBinding>() {
+    private val homeFragment = HomeFragment()
+
+    override val logTag = MainActivity::class.simpleName
+    override val bindingInflater: (LayoutInflater) -> ActivityMainBinding =
+        ActivityMainBinding::inflate
+
+    override fun setup() {
+        replaceFragment(homeFragment)
+    }
+
+    private fun replaceFragment(fragment: Fragment) {
+        val transaction = supportFragmentManager.beginTransaction()
+        transaction.replace(R.id.sub_view_container, fragment)
+        transaction.commit()
+    }
+
+}
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
+
     private val logInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
@@ -19,48 +44,21 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        binding.button.setOnClickListener {
-            makeRequestUsingOKHTTPWithQuery(binding.editText.text.toString())
-        }
+
+        getCurrentWeatherInformation()
+
     }
 
-    // just to get information from the server without giving any query or path parameter
-    private fun makeRequestUsingOKHTTP() {
-        Log.i("MainActivity", "makeRequestUsingOKHTTP")
-        val request = Request.Builder()
-            .url("https://v2.jokeapi.dev/joke/Any")
-            .build()
-
-        // will be executed in the main thread
-//        val response = okHttpClient.newCall(request).execute()
-//        response.body.toString()
-
-
-        // will be executed on another thread
-        okHttpClient.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                Log.i("MainActivity", "failure ${e.message}")
-
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                runOnUiThread {
-                    binding.text.text = response.body?.string().toString()
-                }
-                Log.i("MainActivity", "success ${response.body?.string().toString()}")
-
-            }
-
-        })
-    }
-
-    // to get information from the server with query parameter
-    private fun makeRequestUsingOKHTTPWithQuery(name: String) {
-        Log.i("MainActivity", "makeRequestUsingOKHTTP")
+    private fun getCurrentWeatherInformation() {
+        Log.i("MainActivity", "getCurrentWeatherInformation")
         val url = HttpUrl.Builder()
             .scheme("https")
-            .host("api.nationalize.io")
-            .addQueryParameter("name", name)
+            .host("api.weatherbit.io")
+            .addPathSegment("v2.0")
+            .addPathSegment("current")
+            .addQueryParameter("lat", "37.8267")
+            .addQueryParameter("lon", "122.4233")
+            .addQueryParameter("key", "7e55a1c2b46f4f60b1cf9fcb7e597261")
             .build()
         val request = Request.Builder()
             .url(url)
@@ -75,11 +73,12 @@ class MainActivity : AppCompatActivity() {
 
             override fun onResponse(call: Call, response: Response) {
                 response.body?.string().let { jsonString ->
-//                    val json = JSONObject(jsonString.toString()).toNationalResponse()
-                    val json = Gson().fromJson(jsonString, NationalResponse::class.java)
+                    val json = Gson().fromJson(jsonString, WeatherAPI::class.java)
                     Log.i("MainActivity", "success $json")
                     runOnUiThread {
-                        binding.text.text = json.countries[1].countryID
+//                        binding.cityTextView.text = json.data[0].cityName
+//                        binding.countryTextView.text =
+//                            "${json.data[0].countryCode} ${json.data[0].stateCode}"
                     }
                 }
             }
