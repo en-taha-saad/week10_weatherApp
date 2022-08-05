@@ -1,17 +1,8 @@
 package com.thechance.season2week10
 
-import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
-import com.google.gson.Gson
-import okhttp3.*
-import java.io.IOException
-import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import okhttp3.logging.HttpLoggingInterceptor
 import com.thechance.season2week10.databinding.ActivityMainBinding
-import com.thechance.season2week10.models.WeatherAPI
-
 
 
 class MainActivity : BaseActivity<ActivityMainBinding>() {
@@ -23,6 +14,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
     override fun setup() {
         replaceFragment(homeFragment)
+
     }
 
     private fun replaceFragment(fragment: Fragment) {
@@ -33,58 +25,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
 }
 
-class MainActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityMainBinding
-
-    private val logInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
-    }
-    private val okHttpClient = OkHttpClient.Builder().addInterceptor(logInterceptor).build()
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        getCurrentWeatherInformation()
-
-    }
-
-    private fun getCurrentWeatherInformation() {
-        Log.i("MainActivity", "getCurrentWeatherInformation")
-        val url = HttpUrl.Builder()
-            .scheme("https")
-            .host("api.weatherbit.io")
-            .addPathSegment("v2.0")
-            .addPathSegment("current")
-            .addQueryParameter("lat", "37.8267")
-            .addQueryParameter("lon", "122.4233")
-            .addQueryParameter("key", "7e55a1c2b46f4f60b1cf9fcb7e597261")
-            .build()
-        val request = Request.Builder()
-            .url(url)
-            .build()
-
-
-        okHttpClient.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                Log.i("MainActivity", "failure ${e.message}")
-
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                response.body?.string().let { jsonString ->
-                    val json = Gson().fromJson(jsonString, WeatherAPI::class.java)
-                    Log.i("MainActivity", "success $json")
-                    runOnUiThread {
-//                        binding.cityTextView.text = json.data[0].cityName
-//                        binding.countryTextView.text =
-//                            "${json.data[0].countryCode} ${json.data[0].stateCode}"
-                    }
-                }
-            }
-        })
-    }
-}
 
 /*
 Okhttp Interceptor
